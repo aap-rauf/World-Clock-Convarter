@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>World Time Converter</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #000;
+      color: #fff;
+      text-align: center;
+    }
+    h2 {
+      margin-top: 10px;
+    }
+    input, select, button {
+      padding: 10px;
+      margin: 10px;
+      border-radius: 5px;
+      border: none;
+      font-size: 16px;
+    }
+    .city-list {
+      margin-top: 20px;
+    }
+    .city-item {
+      margin: 10px;
+      font-size: 20px;
+    }
+  </style>
+</head>
+<body>
+  <h2>World Time Converter</h2>
+
+  <input type="datetime-local" id="inputTime">
+  <button onclick="setCurrentTime()">Current Time</button>
+
+  <div>
+    <select id="citySelect">
+      <option value="Asia/Riyadh">Riyadh</option>
+      <option value="Asia/Kolkata">Calcutta</option>
+      <option value="Asia/Kolkata">New Delhi</option>
+      <option value="Europe/London">London</option>
+      <option value="America/New_York">New York</option>
+      <option value="Asia/Tokyo">Tokyo</option>
+    </select>
+    <button onclick="addCity()">+ Add City</button>
+  </div>
+
+  <div class="city-list" id="cityList"></div>
+
+  <script>
+    let cities = [];
+
+    function setCurrentTime() {
+      document.getElementById("inputTime").value = new Date().toISOString().slice(0,16);
+      updateTimes();
+    }
+
+    function addCity() {
+      const city = document.getElementById("citySelect").value;
+      if (!cities.includes(city)) {
+        cities.push(city);
+        updateTimes();
+      }
+    }
+
+    function updateTimes() {
+      const timeInput = document.getElementById("inputTime").value;
+      if (!timeInput) return;
+      const baseDate = new Date(timeInput);
+
+      const cityList = document.getElementById("cityList");
+      cityList.innerHTML = "";
+
+      cities.forEach(city => {
+        const timeString = new Intl.DateTimeFormat("en-US", {
+          timeZone: city,
+          hour: "2-digit",
+          minute: "2-digit",
+          hour12: true,
+          weekday: "long",
+          month: "long",
+          day: "numeric",
+          year: "numeric"
+        }).format(baseDate);
+
+        const div = document.createElement("div");
+        div.className = "city-item";
+        div.textContent = city + ": " + timeString;
+        cityList.appendChild(div);
+      });
+    }
+
+    // initialize
+    setCurrentTime();
+  </script>
+</body>
+</html>
