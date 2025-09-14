@@ -4,6 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>World Clock Converter</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#000000">
   <style>
     body {
       margin: 0;
@@ -111,7 +113,7 @@
   <div class="city-section" id="cityList"></div>
 
   <script>
-    let cities = ["Asia/Riyadh"]; // start with Riyadh
+    let cities = ["Asia/Riyadh"]; // default
 
     function setCurrentTime() {
       document.getElementById("inputTime").value = new Date().toISOString().slice(0,16);
@@ -168,14 +170,18 @@
       });
     }
 
-    // auto refresh every 30s if current time mode
+    // auto refresh every 30s
     setInterval(() => {
       if (!document.getElementById("inputTime").value) {
         updateTimes();
       }
     }, 30000);
 
-    // initialize
+    // register service worker
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("sw.js");
+    }
+
     setCurrentTime();
   </script>
 </body>
