@@ -113,76 +113,86 @@
   <div class="city-section" id="cityList"></div>
 
   <script>
-    let cities = ["Asia/Riyadh"]; // default
+  let cities = ["Asia/Riyadh"]; // default
 
-    function setCurrentTime() {
-      document.getElementById("inputTime").value = new Date().toISOString().slice(0,16);
+  function setCurrentTime() {
+    const now = new Date();
+    document.getElementById("inputTime").value = now.toISOString().slice(0,16);
+    updateTimes();
+  }
+
+  function addCity() {
+    const city = document.getElementById("citySelect").value;
+    if (!cities.includes(city)) {
+      cities.push(city);
       updateTimes();
     }
+  }
 
-    function addCity() {
-      const city = document.getElementById("citySelect").value;
-      if (!cities.includes(city)) {
-        cities.push(city);
-        updateTimes();
-      }
+  function removeCity(city) {
+    cities = cities.filter(c => c !== city);
+    updateTimes();
+  }
+
+  function updateTimes() {
+    const input = document.getElementById("inputTime").value;
+
+    // Parse datetime-local input as local without shifting
+    let baseDate;
+    if (input) {
+      const [datePart, timePart] = input.split("T");
+      const [year, month, day] = datePart.split("-").map(Number);
+      const [hour, minute] = timePart.split(":").map(Number);
+      baseDate = new Date(year, month - 1, day, hour, minute);
+    } else {
+      baseDate = new Date();
     }
 
-    function removeCity(city) {
-      cities = cities.filter(c => c !== city);
+    const cityList = document.getElementById("cityList");
+    cityList.innerHTML = "";
+
+    cities.forEach(city => {
+      const optionsTime = {
+        timeZone: city,
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: true
+      };
+      const optionsDate = {
+        timeZone: city,
+        weekday: "long",
+        month: "long",
+        day: "numeric",
+        year: "numeric"
+      };
+
+      const timeString = new Intl.DateTimeFormat("en-US", optionsTime).format(baseDate);
+      const dateString = new Intl.DateTimeFormat("en-US", optionsDate).format(baseDate);
+
+      const div = document.createElement("div");
+      div.className = "city-item";
+      div.innerHTML = `
+        <div class="city-name">${city}</div>
+        <div class="city-time">${timeString}</div>
+        <div class="city-date">${dateString}</div>
+        <button class="remove-btn" onclick="removeCity('${city}')">X</button>
+      `;
+      cityList.appendChild(div);
+    });
+  }
+
+  // auto refresh every 30s (only if current time mode)
+  setInterval(() => {
+    if (!document.getElementById("inputTime").value) {
       updateTimes();
     }
+  }, 30000);
 
-    function updateTimes() {
-      const timeInput = document.getElementById("inputTime").value;
-      const baseDate = timeInput ? new Date(timeInput) : new Date();
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("sw.js");
+  }
 
-      const cityList = document.getElementById("cityList");
-      cityList.innerHTML = "";
-
-      cities.forEach(city => {
-        const optionsTime = {
-          timeZone: city,
-          hour: "2-digit",
-          minute: "2-digit",
-          hour12: true
-        };
-        const optionsDate = {
-          timeZone: city,
-          weekday: "long",
-          month: "long",
-          day: "numeric",
-          year: "numeric"
-        };
-
-        const timeString = new Intl.DateTimeFormat("en-US", optionsTime).format(baseDate);
-        const dateString = new Intl.DateTimeFormat("en-US", optionsDate).format(baseDate);
-
-        const div = document.createElement("div");
-        div.className = "city-item";
-        div.innerHTML = `
-          <div class="city-name">${city}</div>
-          <div class="city-time">${timeString}</div>
-          <div class="city-date">${dateString}</div>
-          <button class="remove-btn" onclick="removeCity('${city}')">X</button>
-        `;
-        cityList.appendChild(div);
-      });
-    }
-
-    // auto refresh every 30s
-    setInterval(() => {
-      if (!document.getElementById("inputTime").value) {
-        updateTimes();
-      }
-    }, 30000);
-
-    // register service worker
-    if ("serviceWorker" in navigator) {
-      navigator.serviceWorker.register("sw.js");
-    }
-
-    setCurrentTime();
-  </script>
+  setCurrentTime();
+</script>
 </body>
 </html>
