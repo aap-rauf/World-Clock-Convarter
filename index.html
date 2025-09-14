@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>World Clock Converter</title>
+  <style>
+    body {
+      background: #111;
+      color: #fff;
+      font-family: Arial, sans-serif;
+      text-align: center;
+      margin: 0;
+    }
+    header {
+      padding: 15px;
+      background: #007bff;
+      font-size: 1.3em;
+      font-weight: bold;
+    }
+    .picker-container {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin: 20px 0;
+      position: relative;
+    }
+    .wheel {
+      width: 70px;
+      height: 150px;
+      overflow-y: scroll;
+      scroll-snap-type: y mandatory;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+      position: relative;
+      border-radius: 8px;
+      background: #000;
+      color: #fff;
+    }
+    .wheel::-webkit-scrollbar {
+      display: none;
+    }
+    .wheel div {
+      height: 50px;
+      line-height: 50px;
+      font-size: 1.4em;
+      scroll-snap-align: center;
+    }
+    .highlight {
+      position: absolute;
+      top: 50%;
+      left: 0;
+      width: 100%;
+      height: 50px;
+      margin-top: -25px;
+      border-top: 2px solid #007bff;
+      border-bottom: 2px solid #007bff;
+      pointer-events: none;
+    }
+    .city-list {
+      margin-top: 30px;
+      padding: 0 15px;
+    }
+    .city-item {
+      background: #222;
+      margin: 10px 0;
+      padding: 15px;
+      border-radius: 8px;
+      text-align: left;
+    }
+    .city-name {
+      font-weight: bold;
+    }
+    .city-time {
+      color: #00c3ff;
+      font-size: 1.3em;
+    }
+    select, button {
+      margin: 10px;
+      padding: 10px;
+      font-size: 1em;
+      border-radius: 6px;
+      border: none;
+    }
+  </style>
+</head>
+<body>
+  <header>🌍 World Clock Converter</header>
+
+  <!-- Wheel Pickers -->
+  <div class="picker-container">
+    <div class="wheel" id="hourWheel"></div>
+    <div class="wheel" id="minuteWheel"></div>
+    <div class="wheel" id="ampmWheel"></div>
+    <div class="highlight"></div>
+  </div>
+
+  <div class="picker-container">
+    <div class="wheel" id="dayWheel"></div>
+    <div class="wheel" id="monthWheel"></div>
+    <div class="wheel" id="yearWheel"></div>
+    <div class="highlight"></div>
+  </div>
+
+  <select id="citySelect">
+    <option value="Asia/Kolkata">Kolkata</option>
+    <option value="Asia/Riyadh">Riyadh</option>
+    <option value="Europe/London">London</option>
+    <option value="America/New_York">New York</option>
+    <option value="Asia/Tokyo">Tokyo</option>
+    <option value="Australia/Sydney">Sydney</option>
+  </select>
+  <button onclick="addCity()">Add City</button>
+
+  <div class="city-list" id="cityList"></div>
+
+<script>
+let cities = ["Asia/Kolkata","Asia/Riyadh"];
+
+// Fill wheels with values
+function fillWheel(id, values) {
+  const el = document.getElementById(id);
+  values.forEach(v => {
+    const div = document.createElement("div");
+    div.textContent = v;
+    el.appendChild(div);
+  });
+  // center on middle value
+  el.scrollTop = (el.scrollHeight / values.length) * 2;
+}
+
+// Initialize wheels
+fillWheel("hourWheel", Array.from({length:12}, (_,i)=>i+1));
+fillWheel("minuteWheel", Array.from({length:60}, (_,i)=>String(i).padStart(2,"0")));
+fillWheel("ampmWheel", ["AM","PM"]);
+fillWheel("dayWheel", Array.from({length:31}, (_,i)=>i+1));
+fillWheel("monthWheel", ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"]);
+const yearNow = new Date().getFullYear();
+fillWheel("yearWheel", Array.from({length:11}, (_,i)=>yearNow-5+i));
+
+function getSelectedValue(id) {
+  const el = document.getElementById(id);
+  const index = Math.round(el.scrollTop / 50);
+  return el.children[index]?.textContent;
+}
+
+function getPickedDate() {
+  let hour = parseInt(getSelectedValue("hourWheel"));
+  let minute = parseInt(getSelectedValue("minuteWheel"));
+  let ampm = getSelectedValue("ampmWheel");
+  let day = parseInt(getSelectedValue("dayWheel"));
+  let month = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"].indexOf(getSelectedValue("monthWheel"));
+  let year = parseInt(getSelectedValue("yearWheel"));
+
+  let h24 = (ampm==="PM" && hour<12)?hour+12 : (ampm==="AM" && hour===12?0:hour);
+  return new Date(Date.UTC(year, month, day, h24, minute));
+}
+
+function addCity() {
+  const city = document.getElementById("citySelect").value;
+  if (!cities.includes(city)) {
+    cities.push(city);
+    updateTimes();
+  }
+}
+
+function removeCity(city) {
+  cities = cities.filter(c=>c!==city);
+  updateTimes();
+}
+
+function updateTimes() {
+  const baseDate = getPickedDate();
+  const cityList = document.getElementById("cityList");
+  cityList.innerHTML = "";
+
+  cities.forEach(city => {
+    const optionsTime = { timeZone: city, hour: "2-digit", minute: "2-digit", hour12: true };
+    const optionsDate = { timeZone: city, weekday:"long", month:"long", day:"numeric", year:"numeric" };
+    const timeString = new Intl.DateTimeFormat("en-US", optionsTime).format(baseDate);
+    const dateString = new Intl.DateTimeFormat("en-US", optionsDate).format(baseDate);
+
+    const div = document.createElement("div");
+    div.className = "city-item";
+    const displayName = city.split("/")[1].replace("_"," ");
+    div.innerHTML = `<div class="city-name">${displayName}</div>
+                     <div class="city-time">${timeString}</div>
+                     <div class="city-date">${dateString}</div>`;
+    // swipe remove
+    let startX=0;
+    div.addEventListener("touchstart",e=>startX=e.touches[0].clientX);
+    div.addEventListener("touchend",e=>{
+      if(startX-e.changedTouches[0].clientX>80) removeCity(city);
+    });
+    cityList.appendChild(div);
+  });
+}
+
+setInterval(updateTimes,60000);
+updateTimes();
+</script>
+</body>
+</html>
